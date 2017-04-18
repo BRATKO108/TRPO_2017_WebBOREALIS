@@ -6,7 +6,7 @@
     <display-name>Archetype Created Web Application</display-name>
     <context-param>
         <param-name>contextConfigLocation</param-name>
-        <param-value>/WEB-INF/appconfig-root.xml</param-value>
+        <param-value>WEB-INF/appconfig-root.xml</param-value>
     </context-param>
 
     <listener>
