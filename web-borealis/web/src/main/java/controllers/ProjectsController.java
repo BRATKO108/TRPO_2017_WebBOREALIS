@@ -22,6 +22,8 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.CloneCommand;
 
+import org.eclipse.egit.github.core.RepositoryCommit;
+import org.eclipse.egit.github.core.Commit;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
 
@@ -41,13 +43,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Controller
 public class ProjectsController {
 
+    //@Autowired
+    //private ProjectsService projectsService = new ProjectsService();
     /*@Autowired
-    @Qualifier(value="projectsService")
-    private ProjectsService projectsService = new ProjectsService();
-    @Autowired
     private AuthService authService;*/
 
-    Logger log = LoggerFactory.getLogger(HelloController.class);
+    Logger log = LoggerFactory.getLogger(ProjectsController.class);
     private Object object;
 
     @RequestMapping(value = "/projects", method = RequestMethod.GET)
@@ -86,14 +87,30 @@ public class ProjectsController {
     ) {
         boolean success = true, result;
         String message = "";
-        String localPath = System.getProperty("user.dir") + File.separator + "projects" + File.separator + owner + "_" + repo + "_" + commitOrBranch;
         if (owner.length() == 0 || repo.length() == 0) {
             success = false;
             message = "You must specify owner and repository name!";
         }
 
+        GitHubClient client = new GitHubClient();
+        if (username.length() > 0 && password.length() > 0) {
+            client.setCredentials(username, password);
+        }
+
+        String commit = "", branch = "";
+        if (type.equals("1")) {
+            branch = commitOrBranch;
+            commit = getBranchLastCommitSha(owner, repo, branch, client);
+        }
+        else {
+            commit = commitOrBranch;
+        }
+        System.out.println("Commit: " + commit);
+        String relativePath = File.separator + "projects" + File.separator + owner + "_" + repo + "_" + commit;
+        String localPath = System.getProperty("user.dir") + relativePath;
+
         if (success == true) {
-            result = cloneRepo(owner, repo, commitOrBranch, type, username, password, localPath);
+            result = cloneRepo(owner, repo, commit, branch, client, localPath);
             if (result == false) {
                 message = "There was a problem with cloning the repository. If the repository is private you must fill username and password! Please, check owner, repository name, commit or branch.";
                 success = false;
@@ -104,7 +121,7 @@ public class ProjectsController {
         }
         if (success == true) {
             Project project = new Project(
-                    title, desc, owner, repo, commitOrBranch, "", localPath, 0
+                    title, desc, owner, repo, commit, branch, relativePath, 0
             );
             /*User user = new User();
             user.setUsername("gg");
@@ -119,6 +136,25 @@ public class ProjectsController {
         return new Greeting(counter.incrementAndGet(), String.format(template, name));
     }
 */
+
+    public String getBranchLastCommitSha(String owner, String repo, String branch, GitHubClient client)
+    {
+        RepositoryService service = new RepositoryService(client);
+        CommitService commitService = new CommitService(client);
+        String sha = "";
+
+        try {
+            Repository r = service.getRepository(owner, repo);
+            RepositoryCommit repoCommit = commitService.getCommits(r, branch, null).get(0);
+            sha = repoCommit.getSha();
+        }
+        catch(IOException ie) {
+            System.out.println("Error with get repository!\n");
+        }
+
+        return sha;
+    }
+
     public void testSomeMethod()
     {
         GitHubClient client = new GitHubClient();
@@ -129,17 +165,18 @@ public class ProjectsController {
         //cloneRepo("MashaFomina", "DB-labs", client);
 
 //service1.
-        try {
-            List<Repository> repositories = service.getRepositories();
+        //try {
+            /*List<Repository> repositories = service.getRepositories();
             CommitService commitService = new CommitService(client);
             for (int i = 0; i < repositories.size(); i++) {
                 Repository repo = repositories.get(i);
                 //Repository repository = .getRepository("https://github.com/MashaFomina/fp_labs");
-                /*System.out.println("Repository Name: " + repo.getName());
+                System.out.println("Repository Name: " + repo.getName());
                 try {
                     for (RepositoryCommit commit : commitService.getCommits(repo)) {
                         //commit.getFiles().
                         Commit temp = commit.getCommit();
+
                         System.out.println("Commit SHA:\n" + temp.getTree().getSha() + "\nMessage: " + temp.getMessage());
                         System.out.println("Url: " + commit.getUrl());
                         System.out.println("Url: " + temp.getUrl());
@@ -168,25 +205,16 @@ public class ProjectsController {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }*/
-            }
+            /*}
         }
         catch(IOException ie) {
             System.out.println("Error with getRepositories!\n");
-        }
-    }
-    private static boolean isExists(String link, String commitOrBranch, int type)
-    {
-        boolean result = false;
-        return result;
+        }*/
     }
 
-    private static boolean cloneRepo(String owner, String repo, String commitOrBranch, String type, String username, String password, String localPath)
+    private static boolean cloneRepo(String owner, String repo, String commit, String branch, GitHubClient client, String localPath)
     {
         boolean result = true;
-        GitHubClient client = new GitHubClient();
-        if (username.length() > 0 && password.length() > 0) {
-            client.setCredentials(username, password);
-        }
         Git git = null;
         File dir = new File(localPath);
         try {
@@ -212,16 +240,16 @@ public class ProjectsController {
             command = Git.cloneRepository()
                     .setURI(cloneURL)
                     .setDirectory(dir);
-            if (commitOrBranch.length() > 0 && type.equals("1")) {
-                command.setBranch(commitOrBranch);
+            if (branch.length() > 0) {
+                command.setBranch(branch);
             }
             git = command.call();
 
             // Checkout on commit
-            if (commitOrBranch.length() > 0 && type.equals("0")) {
-                git.checkout().setName(commitOrBranch).call();
+            if (commit.length() > 0) {
+                git.checkout().setName(commit).call();
             }
-            System.out.println("Branch: " + git.getRepository().getBranch());
+            //System.out.println("Branch: " + git.getRepository().getBranch());
         } catch (IOException | GitAPIException ex) {
             System.out.println("There was a problem with cloning the repository: " + ex.getMessage());
             result = false;

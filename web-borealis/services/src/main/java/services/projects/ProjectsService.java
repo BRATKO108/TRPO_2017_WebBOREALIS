@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 
-@Component("projectsService")
+@Component
 public class ProjectsService {
 
     public static final String INSERT_PROJECT = "insert into projects (title, description, owner, repo, commit, branch, path, userid) values (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -22,9 +22,13 @@ public class ProjectsService {
     //@Autowired
     JdbcTemplate jdbcTemplate;
 
-    @Autowired
+    /*@Autowired
     public void setDataSource(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }*/
+    @Autowired
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public int insertProject(Project project){
