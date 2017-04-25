@@ -1,0 +1,41 @@
+﻿ol li.list-group-item { 
+    list-style: decimal inside;
+    display: list-item;
+}
+.container .panel-body {
+    padding: 15px;
+}
+.container-header .panel-buttons {
+	padding: 10px 15px 0px;
+}
+svg {
+	display: block;
+}
+html, body, #chart, svg {
+	margin: 0px;
+	padding: 0px;
+	height: 100%;
+	width: 100%;
+}
+.nv-point
+{
+	fill-opacity: 1;
+	stroke-opacity: 1;
+}
+.container-header
+{
+	margin: 5px;
+}
+.btn-space
+{
+	margin-left: 5px;
+	margin-right: 5px;
+}
+.nv-point {
+  stroke-opacity: 1 !important;
+  stroke-width: 2px;
+  fill-opacity: 1 !important;
+}
+.btn.btn-trash {
+	padding: 3px 9px;
+}
