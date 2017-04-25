@@ -19,6 +19,9 @@
                 return;
             }
 
+            jQuery('#success').hide();
+            jQuery('textarea#result').val("");
+
             /*if ((jQuery("#owner").val().length !== 0 || jQuery("#repo").val().length !== 0)) {
                 if (jQuery("#archive").val().length !== 0) {
                     jQuery('#error').html("You must download archive or specify Github repository (owner and repository name)! Not together!").show();
@@ -47,13 +50,14 @@
                     if (data.success == true) {
                         jQuery('textarea#result').val(data.message);
                         jQuery('#error').hide();
+                        jQuery('#success').html("The project was successfully added to portal!").show();
                     }
                     else {
                         jQuery('#error').html(data.message).show();
                     }
                 },
                 error : function(e) {
-                    //console.log("ERROR: ", e);
+                    jQuery('#error').html("An error occurred on the server!").show();
                 }
             });
         }
@@ -157,6 +161,7 @@
                     </div>
 
                     <div class="alert alert-danger px-2" style="display:none" id="error"></div>
+                    <div class="alert alert-success px-2" style="display:none" id="success"></div>
 
                     <div class="form-group">
                         <label class="control-label col-sm-2" for="attributes" title="Attributes for borealis">Attributes:</label>

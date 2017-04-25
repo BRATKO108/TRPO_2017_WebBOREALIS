@@ -42,10 +42,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public class ProjectsController {
 
     /*@Autowired
-    @Qualifier(value="projectsService")*/
+    @Qualifier(value="projectsService")
     private ProjectsService projectsService = new ProjectsService();
     @Autowired
-    private AuthService authService;
+    private AuthService authService;*/
 
     Logger log = LoggerFactory.getLogger(HelloController.class);
     private Object object;
@@ -86,7 +86,7 @@ public class ProjectsController {
     ) {
         boolean success = true, result;
         String message = "";
-        String localPath = System.getProperty("user.dir") + File.separator + "services/projects" + File.separator + owner + "_" + repo + "_" + commitOrBranch;
+        String localPath = System.getProperty("user.dir") + File.separator + "projects" + File.separator + owner + "_" + repo + "_" + commitOrBranch;
         if (owner.length() == 0 || repo.length() == 0) {
             success = false;
             message = "You must specify owner and repository name!";
@@ -106,12 +106,12 @@ public class ProjectsController {
             Project project = new Project(
                     title, desc, owner, repo, commitOrBranch, "", localPath, 0
             );
-            User user = new User();
+            /*User user = new User();
             user.setUsername("gg");
             user.setPassword("g");
             authService.insertUser(user);
             projectsService.insertProject(project);
-            projectsService.selectProject(project.getId());
+            projectsService.selectProject(project.getId());*/
         }
         return new ResponseEntity<>(new CheckResult(message, success), HttpStatus.OK);
     }
@@ -122,7 +122,7 @@ public class ProjectsController {
     public void testSomeMethod()
     {
         GitHubClient client = new GitHubClient();
-        //client.setCredentials("mariyaaleksandrowna@yandex.ru", "masha1995");
+        //client.setCredentials(username, password);
 
         RepositoryService service = new RepositoryService(client);
         PullRequestService service1 = new PullRequestService(client);

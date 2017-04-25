@@ -22,5 +22,5 @@ create table projects(
                 branch varchar(255),
                 path varchar(255),
                 userid bigint,
-                foreign key(user_id) references users(id) on update cascade
+                foreign key(userid) references users(id) on update cascade
 );
