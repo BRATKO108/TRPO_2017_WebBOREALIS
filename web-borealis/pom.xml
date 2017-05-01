@@ -3,7 +3,6 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>web-borealis</groupId>
     <artifactId>web-borealis</artifactId>
-    <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>web-borealis</name>
 
@@ -22,22 +21,12 @@
         <module>services</module>
     </modules>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <packaging>pom</packaging>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Jetty сервер, только возможно, его не нужно добавялть - так он будет embedded -->
+            <!-- А standalone - это когда отдельно работает сервер и ему подается war файл-->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
@@ -156,11 +145,7 @@
                 <artifactId>jackson-mapper-asl</artifactId>
                 <version>RELEASE</version>
             </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-jdbc</artifactId>
-                <version>4.3.3.RELEASE</version>
-            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -170,15 +155,23 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.21</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.7</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
         </dependency>
     </dependencies>
 </project>

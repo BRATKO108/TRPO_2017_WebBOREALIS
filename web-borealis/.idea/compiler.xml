@@ -8,7 +8,6 @@
         <outputRelativeToContentRoot value="true" />
         <module name="services" />
         <module name="web" />
-        <module name="web-borealis" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
