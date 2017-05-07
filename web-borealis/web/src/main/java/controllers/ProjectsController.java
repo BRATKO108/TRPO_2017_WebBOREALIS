@@ -43,7 +43,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Controller
 public class ProjectsController {
 
-    //@Autowired
+    @Autowired
+    private ProjectsService projectsService;
     //private ProjectsService projectsService = new ProjectsService();
     /*@Autowired
     private AuthService authService;*/
@@ -98,7 +99,10 @@ public class ProjectsController {
         }
 
         String commit = "", branch = "";
-        if (type.equals("1")) {
+        if (commitOrBranch.length() == 0) {
+            commit = getBranchLastCommitSha(owner, repo, "master", client);
+        }
+        else if (type.equals("1")) {
             branch = commitOrBranch;
             commit = getBranchLastCommitSha(owner, repo, branch, client);
         }
@@ -121,14 +125,15 @@ public class ProjectsController {
         }
         if (success == true) {
             Project project = new Project(
-                    title, desc, owner, repo, commit, branch, relativePath, 0
+                    title, desc, owner, repo, commit, branch, relativePath, 1
             );
             /*User user = new User();
             user.setUsername("gg");
             user.setPassword("g");
-            authService.insertUser(user);
+            authService.insertUser(user);*/
             projectsService.insertProject(project);
-            projectsService.selectProject(project.getId());*/
+            projectsService.selectProject(project.getId());
+            System.out.println("Project count: " + projectsService.selectProjectCount(1));
         }
         return new ResponseEntity<>(new CheckResult(message, success), HttpStatus.OK);
     }

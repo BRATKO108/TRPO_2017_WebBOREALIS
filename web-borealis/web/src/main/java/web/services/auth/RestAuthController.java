@@ -14,7 +14,7 @@ import services.auth.User;
 @RestController
 public class RestAuthController {
 
-    @Autowired
+    //@Autowired
     private AuthService authService;
 
     @RequestMapping(value = "/user/{id}",

@@ -18,18 +18,19 @@ public class ProjectsService {
     public static final String UPDATE_PROJECT = "update projects set (title, description, owner, repo, commit, branch, path, userid) = (?, ?, ?, ?, ?, ?, ?, ?) where id = ?";
     public static final String SELECT_PROJECT = "select * from projects where id = ?";
     public static final String SELECT_USER_PROJECT = "select * from projects where userid = ?";
+    public static final String SELECT_PROJECTS_COUNT = "select count(*) from projects where userid = ?";
 
-    //@Autowired
+    @Autowired
     JdbcTemplate jdbcTemplate;
 
     /*@Autowired
     public void setDataSource(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }*/
-    @Autowired
+    /*@Autowired
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-    }
+    }*/
 
     public int insertProject(Project project){
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -73,6 +74,12 @@ public class ProjectsService {
             project.setId(resultSet.getLong("id"));
             return project;
         });
+    }
+
+    public long selectProjectCount(long userid){
+        long count = 0;
+        count = jdbcTemplate.queryForObject(SELECT_PROJECTS_COUNT, new Object[] {userid}, Integer.class);
+        return count;
     }
 
     /*public ArrayList<Project> selectUserProjects(long userid){

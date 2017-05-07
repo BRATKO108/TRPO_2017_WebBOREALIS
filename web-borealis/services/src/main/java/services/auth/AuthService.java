@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.sql.PreparedStatement;
 import java.util.List;
 
-@Component
+//@Component
 public class AuthService {
 
     public static final String INSERT_USER = "insert into users (username, password) values (?, ?)";
