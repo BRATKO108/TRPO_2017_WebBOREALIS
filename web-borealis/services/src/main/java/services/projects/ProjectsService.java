@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.dao.EmptyResultDataAccessException;
 import javax.sql.DataSource;
 
 import java.sql.PreparedStatement;
@@ -59,21 +60,26 @@ public class ProjectsService {
     }
 
     public Project selectProject(long id){
-        return jdbcTemplate.queryForObject(SELECT_PROJECT, new Object[]{id}, (resultSet, i) -> {
-            Project project = new Project(
-                    resultSet.getString("title"),
-                    resultSet.getString("description"),
-                    resultSet.getString("owner"),
-                    resultSet.getString("repo"),
-                    resultSet.getString("commit"),
-                    resultSet.getString("branch"),
-                    resultSet.getString("path"),
-                    resultSet.getLong("userid")
-            );
-            System.out.println("description: " + resultSet.getString("description"));
-            project.setId(resultSet.getLong("id"));
-            return project;
-        });
+        try {
+            return jdbcTemplate.queryForObject(SELECT_PROJECT, new Object[]{id}, (resultSet, i) -> {
+                Project project = new Project(
+                        resultSet.getString("title"),
+                        resultSet.getString("description"),
+                        resultSet.getString("owner"),
+                        resultSet.getString("repo"),
+                        resultSet.getString("commit"),
+                        resultSet.getString("branch"),
+                        resultSet.getString("path"),
+                        resultSet.getLong("userid")
+                );
+                System.out.println("description: " + resultSet.getString("description"));
+                project.setId(resultSet.getLong("id"));
+                return project;
+            });
+        }
+        catch (EmptyResultDataAccessException e) {
+            return new Project();
+        }
     }
 
     public long selectProjectCount(long userid){

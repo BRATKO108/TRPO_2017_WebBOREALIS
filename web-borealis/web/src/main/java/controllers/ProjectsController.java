@@ -1,5 +1,6 @@
 package controllers;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,15 @@ import services.projects.Project;
 import services.projects.CheckResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
 //@ContextConfiguration(classes={RESTConfiguration.class})
 
 @Controller
@@ -51,18 +60,125 @@ public class ProjectsController {
 
     Logger log = LoggerFactory.getLogger(ProjectsController.class);
     private Object object;
+    String defaultPath = System.getProperty("user.dir") + File.separator + "projects" + File.separator;
+
+    class ElementHierarchy {
+        public String name;
+        public String parent;
+        public int level;
+        public int prev_level;
+        public String extension;
+        public boolean isFile;
+        public int countChilds;
+        public ElementHierarchy(String name, String parent, int level, int prev_level, String extension, boolean isFile, int countChilds)
+        {
+            this.name = name;
+            this.parent = parent;
+            this.level = level;
+            this.prev_level = prev_level;
+            this.extension = extension;
+            this.isFile = isFile;
+            this.countChilds = countChilds;
+        }
+    };
+
+    class getFileResult {
+        private String message;
+        private Boolean success;
+        private String content;
+
+        public getFileResult(String message, Boolean success, String content) {
+            this.message = message;
+            this.success = success;
+            this.content = content;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) { this.message = message; }
+
+        public String getContent() {
+            return content;
+        }
+
+        public void setContent(String content) { this.content = content; }
+
+        public Boolean getSuccess() {
+            return success;
+        }
+
+        public void setSuccess(Boolean success) {
+            this.success = success;
+        }
+    }
+
+    public static class Wrapper {
+
+        String file;
+        String content;
+
+        @Override
+        public String toString() {
+            return "Wrapper [file=" + file + ", content=" + content + "]";
+        }
+
+    }
 
     @RequestMapping(value = "/projects", method = RequestMethod.GET)
-    public String addProject(@RequestParam(value = "project_id", required = false, defaultValue = "0") int project_id,
-                        @RequestParam(value = "version_id", required = false, defaultValue = "0") int version_id,
-                        Model model) {
+    public String addProject(Model model) {
         testSomeMethod();
-
-        //System.out.println("project id: " + project_id + ", version_id: " + version_id + "\n");
-        log.debug("In ProjectsController..");
-        model.addAttribute("project_id", project_id);
-        model.addAttribute("version_id", version_id);
+        log.debug("In ProjectsController... Add project ...");
         return "addProject";
+    }
+
+    @RequestMapping(value = "/project", method = RequestMethod.GET)
+    public String viewProject(@RequestParam(value = "project_id", required = true) int project_id, Model model) {
+        log.debug("In ProjectsController... View project ...");
+        if (project_id > 0) {
+            Project project = projectsService.selectProject(project_id);
+            model.addAttribute("project", project);
+            model.addAttribute("project_id", project.getId());
+            File dir = new File(defaultPath + project.getPath());
+            String gitDir = dir.getAbsolutePath() + File.separator + ".git";
+            ArrayList<ElementHierarchy> hierarchy = new ArrayList<ElementHierarchy>();
+            list(dir, gitDir, hierarchy, 0, "");
+            for (ElementHierarchy elem: hierarchy) {
+                System.out.println("Some elem: " + elem.name + " " + elem.parent + " " + elem.level + " " + elem.extension + " " + elem.isFile + "\n");
+                System.out.println("Prev level: " + elem.prev_level + "\n");
+            }
+            model.addAttribute("hierarchy", hierarchy);
+        }
+        else {
+            model.addAttribute("project_id", 0);
+        }
+        model.addAttribute("file_separator", File.separator);
+        return "viewProject";
+    }
+
+    static int prev_level;
+    private void list(File file, String gitDir, ArrayList<ElementHierarchy> hierarchy, int level, String parent) {
+        if (file.getAbsolutePath().equals(gitDir)) {
+            return;
+        }
+        if (level == 0) {
+            prev_level = -1;
+        }
+        File[] children = file.listFiles();
+        if (level > 0) {
+            hierarchy.add(new ElementHierarchy(file.getName(), parent, level, prev_level, FilenameUtils.getExtension(file.getName()), file.isFile(), (children != null) ? children.length : 0));
+            prev_level = level;
+        }
+        if (children != null) {
+            if (level > 0) {
+                parent = parent + File.separator + file.getName();
+            }
+            level++;
+            for (File child : children) {
+                list(child, gitDir, hierarchy, level, parent);
+            }
+        }
     }
 
     /*@RequestMapping(value = "/runcheck",
@@ -72,6 +188,87 @@ public class ProjectsController {
         System.out.println("Some: " + some);
         return new ResponseEntity<>(new CheckResult("Result", true), HttpStatus.OK);
     }*/
+
+    @RequestMapping(value = "/getFile",
+            method = RequestMethod.POST,
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Object> getFile(@RequestParam String file, @RequestParam long project_id)
+    {
+        String content = "";
+        boolean success = true;
+        String message = "";
+        Project project;
+        if (project_id > 0) {
+            project = projectsService.selectProject(project_id);
+            project_id = project.getId();
+            if (project_id > 0) {
+                try {
+                    System.out.println("File path: " + defaultPath + project.getPath() + file);
+                    content = new String(Files.readAllBytes(Paths.get(defaultPath + project.getPath() + file)));
+                }
+                catch (IOException ie) {
+                    message = "Error during reading file!";
+                    success = false;
+                }
+            }
+        }
+
+        if (project_id <= 0) {
+            success = false;
+            message = "Invalid project id!";
+        }
+
+        return new ResponseEntity<>(new getFileResult(message, success, content), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/saveAndCheck",
+            method = RequestMethod.POST,
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Object> saveAndCheck(@RequestParam String title,
+                                              @RequestParam String desc,
+                                              @RequestParam String attributes,
+                                               @RequestParam long project_id,
+                                               @RequestParam String files
+    ) throws DockerException, InterruptedException, DockerCertificateException, IOException
+    {
+        System.out.println("Files inner: " + files);
+        Type listType = new TypeToken<List<Wrapper>>() {}.getType();
+        Gson g = new Gson();
+        List<Wrapper> listFiles = g.fromJson(files, listType);
+        for (Wrapper w : listFiles) {
+            System.out.println(w);
+        }
+
+        Project project;
+        boolean success = true;
+        String message = "There must be result of check by borealis.";
+        if (project_id > 0) {
+            project = projectsService.selectProject(project_id);
+            project_id = project.getId();
+            if (project_id > 0) {
+                project.setTitle(title);
+                project.setDescription(desc);
+                projectsService.updateProject(project_id, project);
+                try {
+                    for (Wrapper w : listFiles) {
+                        FileUtils.writeStringToFile(new File(defaultPath + project.getPath() + w.file), w.content);
+                    }
+                }
+                catch (IOException ie) {
+                    message = "Error during writing files!";
+                    success = false;
+                }
+                DockerController dc = new DockerController();
+                message = dc.makeCheck(defaultPath + project.getPath(), "test.c");
+            }
+        }
+
+        /*if (success == true) {
+            message = "There must be result of check by borealis.";
+        }*/
+
+        return new ResponseEntity<>(new CheckResult(message, success), HttpStatus.OK);
+    }
 
     @RequestMapping(value = "/addAndCheck",
             method = RequestMethod.POST,
@@ -110,8 +307,8 @@ public class ProjectsController {
             commit = commitOrBranch;
         }
         System.out.println("Commit: " + commit);
-        String relativePath = File.separator + "projects" + File.separator + owner + "_" + repo + "_" + commit;
-        String localPath = System.getProperty("user.dir") + relativePath;
+        String relativePath = owner + "_" + repo + "_" + commit;
+        String localPath = defaultPath + relativePath;
 
         if (success == true) {
             result = cloneRepo(owner, repo, commit, branch, client, localPath);
@@ -132,8 +329,6 @@ public class ProjectsController {
             user.setPassword("g");
             authService.insertUser(user);*/
             projectsService.insertProject(project);
-            projectsService.selectProject(project.getId());
-            System.out.println("Project count: " + projectsService.selectProjectCount(1));
         }
         return new ResponseEntity<>(new CheckResult(message, success), HttpStatus.OK);
     }

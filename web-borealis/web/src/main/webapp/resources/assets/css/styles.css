@@ -8,6 +8,9 @@
 .container-header .panel-buttons {
 	padding: 10px 15px 0px;
 }
+.big-error {
+	margin: 10px 15px 0px;
+}
 svg {
 	display: block;
 }
@@ -38,4 +41,14 @@ html, body, #chart, svg {
 }
 .btn.btn-trash {
 	padding: 3px 9px;
+}
+.btn.btn-hierarchy {
+	padding: 2px;
+	display: inline;
+}
+.CodeMirror {
+	border: 2px inset #dee;
+}
+.table-hierarchy {
+	margin: 4px;
 }

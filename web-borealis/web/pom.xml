@@ -93,5 +93,10 @@
             <artifactId>h2</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-client</artifactId>
+            <version>8.4.0</version>
+        </dependency>
     </dependencies>
 </project>
