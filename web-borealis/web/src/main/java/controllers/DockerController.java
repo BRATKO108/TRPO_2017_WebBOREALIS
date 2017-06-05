@@ -11,13 +11,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class DockerController {
     public static String makeCheck(String pathout, String cName) throws DockerException, InterruptedException, DockerCertificateException, IOException {
-
+        System.out.println("pathout: " + pathout);
+        System.out.println("cName: " + cName);
         // pathout - Путь до программы
         // cName - Имя исполняемого файла программы
         final DockerClient docker = DefaultDockerClient.fromEnv().build();
@@ -26,7 +28,7 @@ public class DockerController {
         System.out.println( docker.listImages(DockerClient.ListImagesParam.byName("vorpal/borealis-standalone")));
 
         //String dockid = "70cfbbcb5048"; //for check image
-        String pathIn = "/home/borealis/borealis/build";
+        String pathIn = "/home/borealis/borealis/build/project";
 
         //final ImageInfo infoim = docker.inspectImage(dockid);
         //System.out.println( infoim.toString() );
@@ -66,14 +68,50 @@ public class DockerController {
 
 
         Path path = Paths.get(pathout);
+        final String[] command000 = {"bash", "-c", "mkdir /home/borealis/borealis/build/project"};
+        final ExecCreation execCreation000 = docker.execCreate(
+                id, command000, DockerClient.ExecCreateParam.attachStdout(),
+                DockerClient.ExecCreateParam.attachStderr());
+        final LogStream output000 = docker.execStart(execCreation000.id());
+        final String execOutput000 = output000.readFully();
+        System.out.println("output: " + execOutput000);
         docker.copyToContainer(path, id, pathIn); // add project to docker image
 
-        final String[] command = {"bash", "-c", "../wrapper /home/borealis/borealis/build/" + cName};
-        final ExecCreation execCreation = docker.execCreate(
-                id, command, DockerClient.ExecCreateParam.attachStdout(),
+        docker.copyToContainer(path, id, pathIn); // add project to docker image
+        final String[] command00 = {"bash", "-c", "chmod -R a+rX /home/borealis/borealis/build/project"};
+        final ExecCreation execCreation00 = docker.execCreate(
+                id, command00, DockerClient.ExecCreateParam.attachStdout(),
                 DockerClient.ExecCreateParam.attachStderr());
-        final LogStream output = docker.execStart(execCreation.id());
-        final String execOutput = output.readFully();
+        final LogStream output00 = docker.execStart(execCreation00.id());
+        final String execOutput00 = output00.readFully();
+        System.out.println("Chmod output: " + execOutput00);
+
+        final String[] command0 = {"bash", "-c", "ls -l /home/borealis/borealis/build/project/1"};
+        final ExecCreation execCreation0 = docker.execCreate(
+                id, command0, DockerClient.ExecCreateParam.attachStdout(),
+                DockerClient.ExecCreateParam.attachStderr());
+        final LogStream output0 = docker.execStart(execCreation0.id());
+        final String execOutput0 = output0.readFully();
+        System.out.println("Ls inner: " + execOutput0);
+
+        final String[] command1 = {"bash", "-c", "ls -l -R /home/borealis/borealis/build/project/ | grep test*.c"};
+        final ExecCreation execCreation1 = docker.execCreate(
+                id, command1, DockerClient.ExecCreateParam.attachStdout(),
+                DockerClient.ExecCreateParam.attachStderr());
+        final LogStream output1 = docker.execStart(execCreation1.id());
+        final String execOutput1 = output1.readFully();
+        System.out.println("Ls inner: " + execOutput1);
+
+        String execOutput = "";
+        List<String> files = new ArrayList<String>(Arrays.asList(cName.split(" ")));
+        for (String file: files) {
+            final String[] command = {"bash", "-c", "../wrapper  ---dump-output:json ---dump-output-file:json.t /home/borealis/borealis/build/project/" + file};
+            final ExecCreation execCreation = docker.execCreate(
+                    id, command, DockerClient.ExecCreateParam.attachStdout(),
+                    DockerClient.ExecCreateParam.attachStderr());
+            final LogStream output = docker.execStart(execCreation.id());
+            execOutput += output.readFully();
+        }
         System.out.println(execOutput);
 
         // Kill container

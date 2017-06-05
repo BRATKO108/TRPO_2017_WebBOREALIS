@@ -141,13 +141,13 @@ public class ProjectsController {
             model.addAttribute("project", project);
             model.addAttribute("project_id", project.getId());
             File dir = new File(defaultPath + project.getPath());
-            String gitDir = dir.getAbsolutePath() + File.separator + ".git";
             ArrayList<ElementHierarchy> hierarchy = new ArrayList<ElementHierarchy>();
+            String gitDir = dir.getAbsolutePath() + File.separator + ".git";
             list(dir, gitDir, hierarchy, 0, "");
-            for (ElementHierarchy elem: hierarchy) {
+            /*for (ElementHierarchy elem: hierarchy) {
                 System.out.println("Some elem: " + elem.name + " " + elem.parent + " " + elem.level + " " + elem.extension + " " + elem.isFile + "\n");
                 System.out.println("Prev level: " + elem.prev_level + "\n");
-            }
+            }*/
             model.addAttribute("hierarchy", hierarchy);
         }
         else {
@@ -179,6 +179,37 @@ public class ProjectsController {
                 list(child, gitDir, hierarchy, level, parent);
             }
         }
+    }
+
+    private String explodeFilesC(File file, String gitDir, String parent, int level) {
+        String result = "";
+        if (file.getAbsolutePath().equals(gitDir)) {
+            return result;
+        }
+        File[] children = file.listFiles();
+        if (file.isFile() && FilenameUtils.getExtension(file.getName()).equals("c")) {
+            if (level > 0 && !parent.equals("")) {
+                result += " " + parent + "/" + file.getName();
+            }
+            else {
+                result += " " + file.getName();
+            }
+        }
+        if (children != null) {
+            if (level > 0) {
+                if (!parent.equals("")) {
+                    parent = parent + "/" + file.getName();
+                }
+                else {
+                    parent = file.getName();
+                }
+            }
+            level++;
+            for (File child : children) {
+                result += explodeFilesC(child, gitDir, parent, level);
+            }
+        }
+        return result;
     }
 
     /*@RequestMapping(value = "/runcheck",
@@ -235,9 +266,9 @@ public class ProjectsController {
         Type listType = new TypeToken<List<Wrapper>>() {}.getType();
         Gson g = new Gson();
         List<Wrapper> listFiles = g.fromJson(files, listType);
-        for (Wrapper w : listFiles) {
+        /*for (Wrapper w : listFiles) {
             System.out.println(w);
-        }
+        }*/
 
         Project project;
         boolean success = true;
@@ -259,7 +290,22 @@ public class ProjectsController {
                     success = false;
                 }
                 DockerController dc = new DockerController();
-                message = dc.makeCheck(defaultPath + project.getPath(), "test.c");
+                String path = defaultPath + project.getPath();
+                File dir = new File(path);
+                String gitDir = dir.getAbsolutePath() + File.separator + ".git";
+                ArrayList<ElementHierarchy> hierarchy = new ArrayList<ElementHierarchy>();
+                list(dir, gitDir, hierarchy, 0, "");
+                /*
+                message = "";
+                for (ElementHierarchy elem: hierarchy) {
+                    if (elem.isFile && elem.extension.equals("c")) {
+                        message += dc.makeCheck(path + elem.parent, elem.name);
+                    }
+                }
+                 */
+                //message = dc.makeCheckFiles(path, hierarchy);
+                String filesC = explodeFilesC(dir, gitDir, "", 0);
+                message = dc.makeCheck(path, filesC);
             }
         }
 
